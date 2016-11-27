@@ -4921,7 +4921,7 @@ public class BlockManager implements BlockStatsMXBean {
    */
   public void satisfyStoragePolicy(long id) {
     storageMovementNeeded.add(id);
-    if(LOG.isDebugEnabled()) {
+    if (LOG.isDebugEnabled()) {
       LOG.debug("Added block collection id {} to block "
           + "storageMovementNeeded queue", id);
     }
