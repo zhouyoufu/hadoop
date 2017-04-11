@@ -1318,7 +1318,6 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
       if (blockManager != null) {
         blockManager.deactivateSPS();
       }
-
       stopSecretManager();
       leaseManager.stopMonitor();
       if (nnrmthread != null) {
@@ -1357,6 +1356,7 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
         // Don't want to keep replication queues when not in Active.
         blockManager.clearQueues();
         blockManager.setInitializedReplQueues(false);
+        blockManager.stopSPSGracefully();
       }
     } finally {
       writeUnlock("stopActiveServices");
