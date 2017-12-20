@@ -375,7 +375,8 @@ public class FiCaSchedulerApp extends SchedulerApplicationAttempt {
   }
 
   public boolean accept(Resource cluster,
-      ResourceCommitRequest<FiCaSchedulerApp, FiCaSchedulerNode> request) {
+      ResourceCommitRequest<FiCaSchedulerApp, FiCaSchedulerNode> request,
+      boolean checkPending) {
     ContainerRequest containerRequest = null;
     boolean reReservation = false;
 
@@ -408,9 +409,11 @@ public class FiCaSchedulerApp extends SchedulerApplicationAttempt {
               schedulerContainer.getRmContainer().getContainerRequest();
 
           // Check pending resource request
-          if (!appSchedulingInfo.checkAllocation(allocation.getAllocationLocalityType(),
-              schedulerContainer.getSchedulerNode(),
-              schedulerContainer.getSchedulerRequestKey())) {
+          if (checkPending &&
+              !appSchedulingInfo.checkAllocation(
+                  allocation.getAllocationLocalityType(),
+                  schedulerContainer.getSchedulerNode(),
+                  schedulerContainer.getSchedulerRequestKey())) {
             if (LOG.isDebugEnabled()) {
               LOG.debug("No pending resource for: nodeType=" + allocation
                   .getAllocationLocalityType() + ", node=" + schedulerContainer
