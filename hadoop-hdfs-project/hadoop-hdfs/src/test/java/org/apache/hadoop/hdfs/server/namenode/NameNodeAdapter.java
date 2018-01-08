@@ -78,7 +78,7 @@ public class NameNodeAdapter {
     namenode.getNamesystem().readLock();
     try {
       return FSDirStatAndListingOp.getFileInfo(namenode.getNamesystem()
-          .getFSDirectory(), src, resolveLink);
+          .getFSDirectory(), src, resolveLink, false);
     } finally {
       namenode.getNamesystem().readUnlock();
     }

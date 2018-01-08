@@ -3051,13 +3051,37 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
    */
   HdfsFileStatus getFileInfo(final String src, boolean resolveLink)
     throws IOException {
+    return getFileInfo(src, resolveLink, false);
+  }
+
+  /**
+   * Get the file info for a specific file.
+   *
+   * @param src The string representation of the path to the file
+   * @param resolveLink whether to throw UnresolvedLinkException
+   *        if src refers to a symlink
+   * @param needLocation if blockLocations need to be returned
+   *
+   * @throws AccessControlException
+   *           if access is denied
+   * @throws UnresolvedLinkException
+   *           if a symlink is encountered.
+   *
+   * @return object containing information regarding the file or null if file
+   *         not found
+   * @throws StandbyException
+   */
+  @Override
+  public HdfsFileStatus getFileInfo(final String src, boolean resolveLink,
+      boolean needLocation) throws IOException {
     final String operationName = "getfileinfo";
     checkOperation(OperationCategory.READ);
     HdfsFileStatus stat = null;
     readLock();
     try {
       checkOperation(OperationCategory.READ);
-      stat = FSDirStatAndListingOp.getFileInfo(dir, src, resolveLink);
+      stat = FSDirStatAndListingOp.getFileInfo(dir, src, resolveLink,
+          needLocation);
     } catch (AccessControlException e) {
       logAuditEvent(false, operationName, src);
       throw e;
@@ -3066,6 +3090,17 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
     }
     logAuditEvent(true, operationName, src);
     return stat;
+  }
+
+  @Override
+  public String getFilePath(Long inodeId) {
+    readLock();
+    try {
+      INode inode = getFSDirectory().getInode(inodeId);
+      return inode == null ? null : inode.getFullPathName();
+    } finally {
+      readUnlock();
+    }
   }
 
   /**
@@ -4346,15 +4381,7 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
     try {
       checkOperation(OperationCategory.UNCHECKED);
       final DatanodeManager dm = getBlockManager().getDatanodeManager();      
-      final List<DatanodeDescriptor> datanodes = dm.getDatanodeListForReport(type);
-
-      reports = new DatanodeStorageReport[datanodes.size()];
-      for (int i = 0; i < reports.length; i++) {
-        final DatanodeDescriptor d = datanodes.get(i);
-        reports[i] = new DatanodeStorageReport(
-            new DatanodeInfoBuilder().setFrom(d).build(),
-            d.getStorageReports());
-      }
+      reports = dm.getDatanodeStorageReport(type);
     } finally {
       readUnlock("getDatanodeStorageReport");
     }

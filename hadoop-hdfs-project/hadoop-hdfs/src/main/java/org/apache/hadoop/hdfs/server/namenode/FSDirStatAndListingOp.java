@@ -89,12 +89,14 @@ class FSDirStatAndListingOp {
    * @param srcArg The string representation of the path to the file
    * @param resolveLink whether to throw UnresolvedLinkException
    *        if src refers to a symlink
+   * @param needLocation if blockLocations need to be returned
    *
    * @return object containing information regarding the file
    *         or null if file not found
    */
   static HdfsFileStatus getFileInfo(
-      FSDirectory fsd, String srcArg, boolean resolveLink)
+      FSDirectory fsd, String srcArg, boolean resolveLink,
+      boolean needLocation)
       throws IOException {
     DirOp dirOp = resolveLink ? DirOp.READ : DirOp.READ_LINK;
     FSPermissionChecker pc = fsd.getPermissionChecker();
@@ -111,7 +113,7 @@ class FSDirStatAndListingOp {
     } else {
       iip = fsd.resolvePath(pc, srcArg, dirOp);
     }
-    return getFileInfo(fsd, iip);
+    return getFileInfo(fsd, iip, needLocation);
   }
 
   /**
@@ -324,11 +326,12 @@ class FSDirStatAndListingOp {
    * @param fsd FSDirectory
    * @param iip The path to the file, the file is included
    * @param includeStoragePolicy whether to include storage policy
+   * @param needLocation if blockLocations need to be returned
    * @return object containing information regarding the file
    *         or null if file not found
    */
-  static HdfsFileStatus getFileInfo(FSDirectory fsd,
-      INodesInPath iip, boolean includeStoragePolicy) throws IOException {
+  static HdfsFileStatus getFileInfo(FSDirectory fsd, INodesInPath iip,
+      boolean includeStoragePolicy, boolean needLocation) throws IOException {
     fsd.readLock();
     try {
       final INode node = iip.getLastINode();
@@ -338,14 +341,14 @@ class FSDirStatAndListingOp {
       byte policy = (includeStoragePolicy && !node.isSymlink())
           ? node.getStoragePolicyID()
           : HdfsConstants.BLOCK_STORAGE_POLICY_ID_UNSPECIFIED;
-      return createFileStatus(fsd, iip, null, policy, false);
+      return createFileStatus(fsd, iip, null, policy, needLocation);
     } finally {
       fsd.readUnlock();
     }
   }
 
-  static HdfsFileStatus getFileInfo(FSDirectory fsd, INodesInPath iip)
-    throws IOException {
+  static HdfsFileStatus getFileInfo(FSDirectory fsd, INodesInPath iip,
+      boolean needLocation) throws IOException {
     fsd.readLock();
     try {
       HdfsFileStatus status = null;
@@ -356,7 +359,7 @@ class FSDirStatAndListingOp {
           status = FSDirectory.DOT_SNAPSHOT_DIR_STATUS;
         }
       } else {
-        status = getFileInfo(fsd, iip, true);
+        status = getFileInfo(fsd, iip, true, needLocation);
       }
       return status;
     } finally {
